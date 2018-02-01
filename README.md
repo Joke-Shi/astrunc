@@ -24,11 +24,7 @@ int astrunc::access::split( std::vector< std::string > &__vs, const std::string 
 
 
 int main( int argc, const char **argv)
-{
-  std::string s_zh = "Prometheus，它的价值在于可靠性，甚至在很恶劣的环境下，你都可以随时访问它和查"
-                  "看系统服务各种指标的统计信息。 如果你对统计数据需要100%的精确，它并不适用，例"
-                  "如：它不适用于实时计费系统。";
-                  
+{         
   std::string s_en = "He said: Chang suggested organizing a canine patrol squad at the "
                      "museum and, in 1987, dogs came back. At 1 year old, each dog is "
                      "given a tailored training course. ";
