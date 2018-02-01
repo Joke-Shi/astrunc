@@ -3,6 +3,16 @@
 ## Engilsh-Description
 astrunc: A library that performs sentence break processing of utf-8 encoded text segments in natural language processing. 
 
+## Make-sample
+```
+git clone https://github.com/Joke-Shi/astrunc.git
+cd astrunc
+make
+
+cd sample
+ls
+```
+
 ### API
 ```
 /**
@@ -46,6 +56,16 @@ int main( int argc, const char **argv)
 
 ## 中文说明
 astrunc：用在自然语言处理中对utf-8编码的文本段进行断句处理的库。
+
+## Make-实例
+```
+git clone https://github.com/Joke-Shi/astrunc.git
+cd astrunc
+make
+
+cd sample
+ls
+```
 
 ### 使用接口
 ```
