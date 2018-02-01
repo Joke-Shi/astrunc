@@ -29,6 +29,7 @@ int main( int argc, const char **argv)
                      "museum and, in 1987, dogs came back. At 1 year old, each dog is "
                      "given a tailored training course. ";
                      
+  std::vector< std::string> vec_s;
   int rc = astrunc::access::split( vec_s, s_en, astrunc::access::EN, 32);
   if ( 0 == rc) {
     for ( auto const &__s : vec_s) {
@@ -72,6 +73,7 @@ int main( int argc, const char **argv)
                      "看系统服务各种指标的统计信息。 如果你对统计数据需要100%的精确，它并不适用，例"
                      "如：它不适用于实时计费系统。";
                      
+  std::vector< std::string> vec_s;
   int rc = astrunc::access::split( vec_s, s_zh, astrunc::access::ZH, 32);
   if ( 0 == rc) {
     for ( auto const &__s : vec_s) {
