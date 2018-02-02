@@ -134,6 +134,8 @@ namespace astrunc {
             static const std::string west_bracket_r    ;
             static const std::string west_braces_l     ;
             static const std::string west_braces_r     ;
+            static const std::string west_book_l       ;
+            static const std::string west_book_r       ;
             static const std::string west_semicolon    ;
             static const std::string west_question     ;
             static const std::string west_excla        ;
@@ -143,6 +145,8 @@ namespace astrunc {
             static const std::string east_comma        ;
             static const std::string east_double_l     ;
             static const std::string east_double_r     ;
+            static const std::string east_angle_l      ;
+            static const std::string east_angle_r      ;
             static const std::string east_sbracket_l   ;
             static const std::string east_sbracket_r   ;
             static const std::string east_bracket_l    ;
@@ -158,6 +162,8 @@ namespace astrunc {
             static const std::string india_comma       ;
             static const std::string india_double_l    ;
             static const std::string india_double_r    ;
+            static const std::string india_angle_l     ;
+            static const std::string india_angle_r     ;
             static const std::string india_sbracket_l  ;
             static const std::string india_sbracket_r  ;
             static const std::string india_bracket_l   ;
@@ -174,6 +180,8 @@ namespace astrunc {
             static const std::string armenia_comma     ;
             static const std::string armenia_double_l  ;
             static const std::string armenia_double_r  ;
+            static const std::string armenia_angle_l   ;
+            static const std::string armenia_angle_r   ;
             static const std::string armenia_sbracket_l;
             static const std::string armenia_sbracket_r;
             static const std::string armenia_bracket_l ;
@@ -205,6 +213,8 @@ const std::string astrunc::access::west_bracket_l  = "【";
 const std::string astrunc::access::west_bracket_r  = "】";
 const std::string astrunc::access::west_braces_l   = "｛";
 const std::string astrunc::access::west_braces_r   = "｝";
+const std::string astrunc::access::west_book_l     = "《";
+const std::string astrunc::access::west_book_r     = "》";
 const std::string astrunc::access::west_semicolon  = "；";
 const std::string astrunc::access::west_question   = "？";
 const std::string astrunc::access::west_excla      = "！";
@@ -214,6 +224,8 @@ const std::string astrunc::access::west_dot        = "。";
 const std::string astrunc::access::east_comma      = ",";
 const std::string astrunc::access::east_double_l   = "\"";
 const std::string astrunc::access::east_double_r   = "\"";
+const std::string astrunc::access::east_angle_l    = "<";
+const std::string astrunc::access::east_angle_r    = ">";
 const std::string astrunc::access::east_sbracket_l = "(";
 const std::string astrunc::access::east_sbracket_r = ")";
 const std::string astrunc::access::east_bracket_l  = "[";
@@ -229,6 +241,8 @@ const std::string astrunc::access::east_dot        = ".";
 const std::string astrunc::access::india_comma      = ",";
 const std::string astrunc::access::india_double_l   = "\"";
 const std::string astrunc::access::india_double_r   = "\"";
+const std::string astrunc::access::india_angle_l    = "<";
+const std::string astrunc::access::india_angle_r    = ">";
 const std::string astrunc::access::india_sbracket_l = "(";
 const std::string astrunc::access::india_sbracket_r = ")";
 const std::string astrunc::access::india_bracket_l  = "[";
@@ -245,6 +259,8 @@ const std::string astrunc::access::india_end        = "।";
 const std::string astrunc::access::armenia_comma      = ",";
 const std::string astrunc::access::armenia_double_l   = "«";
 const std::string astrunc::access::armenia_double_r   = "»";
+const std::string astrunc::access::armenia_angle_l    = "<";
+const std::string astrunc::access::armenia_angle_r    = ">";
 const std::string astrunc::access::armenia_sbracket_l = "(";
 const std::string astrunc::access::armenia_sbracket_r = ")";
 const std::string astrunc::access::armenia_bracket_l  = "[";
@@ -270,7 +286,7 @@ const std::string astrunc::access::armenia_end        = ":";
 int astrunc::access::split( std::vector< std::string > &__vs, const std::string &__seg, astrunc::access::lang_t __lang, std::size_t __nchars)
 {
     int rc = 0;
-	if ( 0 >= __nchars) { __nchars = 256; }
+    if ( 0 >= __nchars) { __nchars = 256; }
 
     if ( !__seg.empty()) {
         if ( ( astrunc::access::JA == __lang ) ||
@@ -404,6 +420,8 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
             AST_BRACKET_R ,    /** "】"   */
             AST_BRACES_L  ,    /** "｛"   */
             AST_BRACES_R  ,    /** "｝"   */
+            AST_BOOK_L    ,    /** "《"   */
+            AST_BOOK_R    ,    /** "》"   */
             AST_SEMI      ,    /** "；"   */
             AST_QUESTION  ,    /** "？"   */
             AST_EXCLA     ,    /** "！"   */
@@ -431,6 +449,9 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
 
             } else if ( __cs == astrunc::access::west_braces_l ) {
                 rc_state = AST_BRACES_L;
+
+            } else if ( __cs == astrunc::access::west_book_l ) {
+                rc_state = AST_BOOK_L;
 
             } else if ( __cs == astrunc::access::west_semicolon ) {
                 rc_state = AST_SEMI;
@@ -553,9 +574,19 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
                             ast_state_v = AST_BRACES_R;
                         }
                     } break;
+                case AST_BOOK_L :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_book_r ) {
+                            ast_state_v = AST_BOOK_R;
+                        }
+                    } break;
                 case AST_SBRACKET_R :
                 case AST_BRACKET_R  :
                 case AST_BRACES_R   :
+                case AST_BOOK_R     :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
@@ -756,12 +787,16 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "\""  */
             AST_DOUBLE_R  ,    /** "\""  */
+            AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
             AST_BRACKET_R ,    /** "]"   */
             AST_BRACES_L  ,    /** "{"   */
             AST_BRACES_R  ,    /** "}"   */
+            AST_DANGLE_L  ,    /** "<<"  */
+            AST_DANGLE_R  ,    /** ">>"  */
             AST_SEMI      ,    /** ";"   */
             AST_DOT       ,    /** "."   */
             AST_QUESTION  ,    /** "?"   */
@@ -777,6 +812,9 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
 
             if ( __cs == astrunc::access::east_double_l) {
                 rc_state = AST_DOUBLE_L;
+
+            } else if ( __cs == astrunc::access::east_angle_l ) {
+                rc_state = AST_ANGLE_L;
 
             } else if ( __cs == astrunc::access::east_sbracket_l ) {
                 rc_state = AST_SBRACKET_L;
@@ -859,11 +897,27 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::east_double_l ) {
+                        if ( cs == astrunc::access::east_double_r ) {
                             ast_state_v = AST_DOUBLE_R;
                         }
                     } break;
                 case AST_DOUBLE_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        ast_state_v = ast_next_state( cs, ast_state_v);
+                    } break;
+                case AST_ANGLE_L :
+                    {
+                        /** Append */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_angle_r) {
+                            ast_state_v = AST_ANGLE_R;
+                        }
+                    } break;
+                case AST_ANGLE_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
@@ -1053,6 +1107,8 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "\""  */
             AST_DOUBLE_R  ,    /** "\""  */
+            AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
@@ -1075,6 +1131,9 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
 
             if ( __cs == astrunc::access::india_double_l) {
                 rc_state = AST_DOUBLE_L;
+
+            } else if ( __cs == astrunc::access::east_angle_l ) {
+                rc_state = AST_ANGLE_L;
 
             } else if ( __cs == astrunc::access::india_sbracket_l ) {
                 rc_state = AST_SBRACKET_L;
@@ -1148,7 +1207,7 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
 
                         if ( AST_CONTENT == ast_state_v) {
                             if ( __nchars < sentence_s.size()) {
-                                if ( cs == "," ) {
+                                if ( cs == astrunc::access::india_comma ) {
                                     ast_state_v = AST_TRUNC;
                                 }
                             }
@@ -1160,11 +1219,27 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::india_double_l ) {
+                        if ( cs == astrunc::access::india_double_r ) {
                             ast_state_v = AST_DOUBLE_R;
                         }
                     } break;
                 case AST_DOUBLE_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        ast_state_v = ast_next_state( cs, ast_state_v);
+                    } break;
+                case AST_ANGLE_L :
+                    {
+                        /** Append */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_angle_r) {
+                            ast_state_v = AST_ANGLE_R;
+                        }
+                    } break;
+                case AST_ANGLE_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
@@ -1355,6 +1430,8 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "«"   */
             AST_DOUBLE_R  ,    /** "»"   */
+            AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
@@ -1376,6 +1453,9 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
 
             if ( __cs == astrunc::access::armenia_double_l) {
                 rc_state = AST_DOUBLE_L;
+
+            } else if ( __cs == astrunc::access::east_angle_l ) {
+                rc_state = AST_ANGLE_L;
 
             } else if ( __cs == astrunc::access::armenia_sbracket_l ) {
                 rc_state = AST_SBRACKET_L;
@@ -1458,11 +1538,27 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::armenia_double_l ) {
+                        if ( cs == astrunc::access::armenia_double_r ) {
                             ast_state_v = AST_DOUBLE_R;
                         }
                     } break;
                 case AST_DOUBLE_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        ast_state_v = ast_next_state( cs, ast_state_v);
+                    } break;
+                case AST_ANGLE_L :
+                    {
+                        /** Append */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_angle_r) {
+                            ast_state_v = AST_ANGLE_R;
+                        }
+                    } break;
+                case AST_ANGLE_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
