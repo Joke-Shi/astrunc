@@ -1446,7 +1446,7 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
 
                         if ( AST_CONTENT == ast_state_v) {
                             if ( __nchars < sentence_s.size()) {
-                                if ( cs == "," ) {
+                                if ( cs == astrunc::access::armenia_comma ) {
                                     ast_state_v = AST_TRUNC;
                                 }
                             }

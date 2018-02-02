@@ -100,5 +100,5 @@ void astrunc::chars::reset( void)
 }/// astrunc::chars::reset
 
 
-#endif /** __ASTRUNC_COMMON_H__ */
+#endif /** __ASTRUNC_CHARS_H__ */
 
