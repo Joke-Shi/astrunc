@@ -462,7 +462,7 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
         std::string sentence_s; 
         try {
             /** alloced sentence cache */
-            sentence_s.reserve( __nchars);
+            sentence_s.reserve( 256);
 
         } catch ( std::bad_alloc &__e) {
             /** Nothing */
@@ -817,7 +817,7 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
         std::string sentence_s; 
         try {
             /** alloced sentence cache */
-            sentence_s.reserve( __nchars);
+            sentence_s.reserve( 256);
 
         } catch ( std::bad_alloc &__e) {
             /** Nothing */
@@ -1118,7 +1118,7 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
         std::string sentence_s; 
         try {
             /** alloced sentence cache */
-            sentence_s.reserve( __nchars);
+            sentence_s.reserve( 256);
 
         } catch ( std::bad_alloc &__e) {
             /** Nothing */
@@ -1416,7 +1416,7 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
         std::string sentence_s; 
         try {
             /** alloced sentence cache */
-            sentence_s.reserve( __nchars);
+            sentence_s.reserve( 256);
 
         } catch ( std::bad_alloc &__e) {
             /** Nothing */

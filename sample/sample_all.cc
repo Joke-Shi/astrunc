@@ -50,7 +50,7 @@ int main( int argc, const char **argv)
     /** Begin split */
     { 
         std::vector< std::string > vs;
-        int rc = astrunc::access::split( vs, s_en, astrunc::access::ZH, 32);
+        int rc = astrunc::access::split( vs, s_en, astrunc::access::EN, -1);
         if ( 0 == rc) {
             for ( auto const &__s : vs ) {
                 std::cout << ": -------------------------------------------------------------------------------[OK-EN]\n";
@@ -59,7 +59,7 @@ int main( int argc, const char **argv)
         } else { std::cerr << "[Error]: Split EN error\n"; }
 
         vs.clear();
-        rc = astrunc::access::split( vs, s_zh, astrunc::access::EN, 32);
+        rc = astrunc::access::split( vs, s_zh, astrunc::access::ZH, 32);
         if ( 0 == rc) {
             for ( auto const &__s : vs ) {
                 std::cout << ": -------------------------------------------------------------------------------[OK-ZH]\n";
