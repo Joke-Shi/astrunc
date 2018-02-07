@@ -1,6 +1,6 @@
 # astrunc （Used C++11）
 
-## Engilsh-Description
+## English-Description
 astrunc: A library that performs sentence break processing of utf-8 encoded text segments in natural language processing. 
 
 ## Make-sample
