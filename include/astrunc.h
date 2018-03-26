@@ -799,6 +799,7 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
             AST_DANGLE_R  ,    /** ">>"  */
             AST_SEMI      ,    /** ";"   */
             AST_DOT       ,    /** "."   */
+            AST_DOT_BLANK ,    /** " "   */
             AST_QUESTION  ,    /** "?"   */
             AST_EXCLA     ,    /** "!"   */
             AST_SUSP_DOT  ,    /** "..." */
@@ -962,7 +963,19 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
                     } break;
                 case AST_DOT :
                     {
-                        if ( cs == " " ) {
+                        if ( (cs == " ") || (cs == "\t") || (cs == "\v")) {
+                            sentence_s += cs;
+
+                            ast_state_v = AST_DOT_BLANK;
+                        } else {
+                            sentence_s += cs;
+
+                            ast_state_v = ast_next_state( cs, ast_state_v);
+                        }
+                    } break;
+                case AST_DOT_BLANK :
+                    {
+                        if ( std::isupper( cs[ 0]))  {
                             /** Push output vector< string > */
                             try {
                                 __vs.push_back( sentence_s);
@@ -974,10 +987,17 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
 
                             /** Clear sentence string */
                             sentence_s.clear();
+
+                            sentence_s += cs;
+                            ast_state_v = ast_next_state( cs, ast_state_v);
                         } else {
                             sentence_s += cs;
 
-                            ast_state_v = ast_next_state( cs, ast_state_v);
+                            if ( (cs == " ") || (cs == "\t") || (cs == "\v")) {
+                                /** Pass */
+                            } else {
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
                         }
                     } break;
                 case AST_SUSP_DOT :
@@ -986,22 +1006,15 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
                             sentence_s += cs;
 
                         } else {
-                            if ( cs == " " ) {
-                                /** Push output vector< string > */
-                                try {
-                                    __vs.push_back( sentence_s);
+                            if ( (cs == " " ) || (cs == "\t") || (cs == "\v")) {
+                                sentence_s += cs;
 
-                                } catch ( std::bad_alloc &__e) {
-                                    /** Alloced failed */
-                                    rc = -1;
-                                }
+                                ast_state_v = AST_DOT_BLANK;
+                            } else {
+                                sentence_s += cs;
 
-                                /** Clear sentence string */
-                                sentence_s.clear();
+                                ast_state_v = ast_next_state( cs, ast_state_v);
                             }
-                            sentence_s += cs;
-
-                            ast_state_v = ast_next_state( cs, ast_state_v);
                         }
                     } break;
                 case AST_SEMI     :
