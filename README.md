@@ -4,7 +4,7 @@
 astrunc: A library that performs sentence break processing of utf-8 encoded text segments in natural language processing. 
 
 ## Make-sample
-```
+```cpp
 git clone https://github.com/Joke-Shi/astrunc.git
 cd astrunc
 make
@@ -14,7 +14,7 @@ ls
 ```
 
 ### API
-```
+```cpp
 /**
  * @Brief: Split utf-8 encoded text segment, and then output sentence string vector.
  *
@@ -29,7 +29,7 @@ int astrunc::access::split( std::vector< std::string > &__vs, const std::string 
 ```
 
 ### SAMPLE
-```
+```cpp
 #include "astrunc.h"
 
 
@@ -58,7 +58,7 @@ int main( int argc, const char **argv)
 astrunc：用在自然语言处理中对utf-8编码的文本段进行断句处理的库。
 
 ## Make-实例
-```
+```bash
 git clone https://github.com/Joke-Shi/astrunc.git
 cd astrunc
 make
@@ -68,7 +68,7 @@ ls
 ```
 
 ### 使用接口
-```
+```cpp
 /**
  * @Brief: Split utf-8 encoded text segment, and then output sentence string vector.
  *
@@ -83,7 +83,7 @@ int astrunc::access::split( std::vector< std::string > &__vs, const std::string 
 ```
 
 ### 使用示例
-```
+```cpp
 #include "astrunc.h"
 
 
