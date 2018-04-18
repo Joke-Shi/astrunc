@@ -4,7 +4,7 @@
 astrunc: A library that performs sentence break processing of utf-8 encoded text segments in natural language processing. 
 
 ## Make-sample
-```cpp
+```bash
 git clone https://github.com/Joke-Shi/astrunc.git
 cd astrunc
 make
