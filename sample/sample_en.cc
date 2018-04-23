@@ -4,7 +4,7 @@
 int main( int argc, const char **argv)
 {         
     std::string s_en = "He said: Chang suggested organizing a canine patrol squad at the "
-                       "museum and, in 1987, dogs came back. At 1 year old, each dog is "
+                       "museum \"abc\" and, in 1987, dogs came back. At 1 year old, each dog is "
                        "given a tailored training course. ";
 
     std::vector< std::string> vec_s;

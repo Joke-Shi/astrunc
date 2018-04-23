@@ -408,19 +408,25 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
 
     if ( !__seg.empty()) {
         enum state_t {
-            AST_START   = 0,
+            AST_START     = 0,
             AST_CONTENT   ,
             AST_SINGLE_L  ,    /** "‘"    */
+            AST_SINGLE_W  ,    /** word   */
             AST_SINGLE_R  ,    /** "’"    */
             AST_DOUBLE_L  ,    /** "“"    */
+            AST_DOUBLE_W  ,    /** word   */
             AST_DOUBLE_R  ,    /** "”"    */
             AST_SBRACKET_L,    /** "（"   */
+            AST_SBRACKET_W,    /** word   */
             AST_SBRACKET_R,    /** "）"   */
             AST_BRACKET_L ,    /** "【"   */
+            AST_BRACKET_W ,    /** word   */
             AST_BRACKET_R ,    /** "】"   */
             AST_BRACES_L  ,    /** "｛"   */
+            AST_BRACES_W  ,    /** word   */
             AST_BRACES_R  ,    /** "｝"   */
             AST_BOOK_L    ,    /** "《"   */
+            AST_BOOK_W    ,    /** word   */
             AST_BOOK_R    ,    /** "》"   */
             AST_SEMI      ,    /** "；"   */
             AST_QUESTION  ,    /** "？"   */
@@ -494,24 +500,19 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
             cs.clear();
         }
 
+        int area_level = 0;
+
         astrunc::chars chars_context;
         while ( chars_context.next( __seg, cs)) {
             switch ( ast_state_v ) {
                 case AST_START : 
-                    {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, AST_START);
-
-                    } break;
                 case AST_CONTENT :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
                         ast_state_v = ast_next_state( cs, ast_state_v);
 
-                        if ( AST_CONTENT == ast_state_v) {
+                        if ( AST_CONTENT == ast_state_v)  {
                             if ( __nchars < sentence_s.size()) {
                                 if ( cs == astrunc::access::west_comma ) {
                                     ast_state_v = AST_TRUNC;
@@ -522,76 +523,367 @@ int astrunc::access::split_west( std::vector< std::string > &__vs, const std::st
                     } break;
                 case AST_SINGLE_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_single_r ) {
+                        if ( cs == astrunc::access::west_single_r) {
                             ast_state_v = AST_SINGLE_R;
+
+                        } else if ( cs == astrunc::access::west_single_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_SINGLE_W;
+                        }
+                    } break;
+                case AST_SINGLE_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_single_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_SINGLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::west_single_l) {
+                            ast_state_v = AST_SINGLE_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_SINGLE_R :
+                    {
+                        area_level -= 1;
+
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_single_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_single_l) {
+                                ast_state_v = AST_SINGLE_L;
+
+                            } else {
+                                ast_state_v = AST_SINGLE_W;
+                            }
                         }
                     } break;
                 case AST_DOUBLE_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_double_r ) {
+                        if ( cs == astrunc::access::west_double_r) {
                             ast_state_v = AST_DOUBLE_R;
+
+                        } else if ( cs == astrunc::access::west_double_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_DOUBLE_W;
                         }
                     } break;
-                case AST_SINGLE_R :
+                case AST_DOUBLE_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_double_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::west_double_l) {
+                            ast_state_v = AST_DOUBLE_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
                 case AST_DOUBLE_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::west_double_r) {
+                            area_level -= 1;
 
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_double_l) {
+                                ast_state_v = AST_DOUBLE_L;
+
+                            } else {
+                                ast_state_v = AST_DOUBLE_W;
+                            }
+                        }
                     } break;
                 case AST_SBRACKET_L :
+                    {
+                        area_level += 1;
+
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_sbracket_r) {
+                            ast_state_v = AST_SBRACKET_R;
+
+                        } else if ( cs == astrunc::access::west_sbracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_SBRACKET_W;
+                        }
+                    } break;
+                case AST_SBRACKET_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::west_sbracket_l) {
+                            ast_state_v = AST_SBRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_SBRACKET_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_sbracket_r ) {
-                            ast_state_v = AST_SBRACKET_R;
+                        if ( cs == astrunc::access::west_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_sbracket_l) {
+                                ast_state_v = AST_SBRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_SBRACKET_W;
+                            }
                         }
                     } break;
                 case AST_BRACKET_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_bracket_r ) {
+                        if ( cs == astrunc::access::west_bracket_r) {
                             ast_state_v = AST_BRACKET_R;
+
+                        } else if ( cs == astrunc::access::west_bracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACKET_W;
+                        }
+                    } break;
+                case AST_BRACKET_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACKET_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::west_bracket_l) {
+                            ast_state_v = AST_BRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACKET_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_bracket_l) {
+                                ast_state_v = AST_BRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_BRACKET_W;
+                            }
                         }
                     } break;
                 case AST_BRACES_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_braces_r ) {
+                        if ( cs == astrunc::access::west_braces_r) {
                             ast_state_v = AST_BRACES_R;
+
+                        } else if ( cs == astrunc::access::west_braces_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACES_W;
+                        }
+                    } break;
+                case AST_BRACES_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACES_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::west_braces_l) {
+                            ast_state_v = AST_BRACES_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACES_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_braces_l) {
+                                ast_state_v = AST_BRACES_L;
+
+                            } else {
+                                ast_state_v = AST_BRACES_W;
+                            }
                         }
                     } break;
                 case AST_BOOK_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::west_book_r ) {
+                        if ( cs == astrunc::access::west_book_r) {
                             ast_state_v = AST_BOOK_R;
+
+                        } else if ( cs == astrunc::access::west_book_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BOOK_W;
                         }
                     } break;
-                case AST_SBRACKET_R :
-                case AST_BRACKET_R  :
-                case AST_BRACES_R   :
-                case AST_BOOK_R     :
+                case AST_BOOK_W :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::west_book_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BOOK_R;
+                            } else {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::west_book_l) {
+                            ast_state_v = AST_BOOK_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BOOK_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::west_book_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::west_book_l) {
+                                ast_state_v = AST_BOOK_L;
+
+                            } else {
+                                ast_state_v = AST_BOOK_W;
+                            }
+                        }
                     } break;
                 case AST_DOT :
                     {
@@ -786,17 +1078,20 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
             AST_START   = 0,
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "\""  */
+            AST_DOUBLE_C  ,    /** char   */
             AST_DOUBLE_R  ,    /** "\""  */
             AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_C   ,    /** char   */
             AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
+            AST_SBRACKET_C,    /** char   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
+            AST_BRACKET_C ,    /** char   */
             AST_BRACKET_R ,    /** "]"   */
             AST_BRACES_L  ,    /** "{"   */
+            AST_BRACES_C  ,    /** char   */
             AST_BRACES_R  ,    /** "}"   */
-            AST_DANGLE_L  ,    /** "<<"  */
-            AST_DANGLE_R  ,    /** ">>"  */
             AST_SEMI      ,    /** ";"   */
             AST_DOT       ,    /** "."   */
             AST_DOT_BLANK ,    /** " "   */
@@ -867,17 +1162,12 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
             cs.clear();
         }
 
+        int area_level = 0;
+
         astrunc::chars chars_context;
         while ( chars_context.next( __seg, cs)) {
             switch ( ast_state_v ) {
                 case AST_START : 
-                    {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, AST_START);
-
-                    } break;
                 case AST_CONTENT :
                     {
                         /** Push back sentence content */
@@ -898,24 +1188,62 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::east_double_r ) {
+                        if ( cs == astrunc::access::east_double_r) {
                             ast_state_v = AST_DOUBLE_R;
+
+                        } else {
+                            ast_state_v = AST_DOUBLE_C;
+                        }
+                    } break;
+                case AST_DOUBLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_double_r) {
+                            ast_state_v = AST_CONTENT;
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_DOUBLE_R :
                     {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        /** Nothing */
                     } break;
                 case AST_ANGLE_L :
                     {
-                        /** Append */
+                        area_level += 1;
+
+                        /** Push back sentence content */
                         sentence_s += cs;
 
                         if ( cs == astrunc::access::east_angle_r) {
                             ast_state_v = AST_ANGLE_R;
+
+                        } else if ( cs == astrunc::access::east_angle_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_ANGLE_C;
+                        }
+                    } break;
+                case AST_ANGLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_ANGLE_R;
+                            } else {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::east_angle_l) {
+                            ast_state_v = AST_ANGLE_L;
+
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_ANGLE_R :
@@ -923,43 +1251,204 @@ int astrunc::access::split_east( std::vector< std::string > &__vs, const std::st
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::east_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::east_angle_l) {
+                                ast_state_v = AST_ANGLE_L;
+
+                            } else {
+                                ast_state_v = AST_ANGLE_C;
+                            }
+                        }
                     } break;
                 case AST_SBRACKET_L :
+                    {
+                        area_level += 1;
+
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_sbracket_r) {
+                            ast_state_v = AST_SBRACKET_R;
+
+                        } else if ( cs == astrunc::access::east_sbracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_SBRACKET_C;
+                        }
+                    } break;
+                case AST_SBRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::east_sbracket_l) {
+                            ast_state_v = AST_SBRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_SBRACKET_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::east_sbracket_r ) {
-                            ast_state_v = AST_SBRACKET_R;
+                        if ( cs == astrunc::access::east_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::east_sbracket_l) {
+                                ast_state_v = AST_SBRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_SBRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACKET_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::east_bracket_r ) {
+                        if ( cs == astrunc::access::east_bracket_r) {
                             ast_state_v = AST_BRACKET_R;
+
+                        } else if ( cs == astrunc::access::east_bracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACKET_C;
+                        }
+                    } break;
+                case AST_BRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACKET_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::east_bracket_l) {
+                            ast_state_v = AST_BRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACKET_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::east_bracket_l) {
+                                ast_state_v = AST_BRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_BRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACES_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::east_braces_r ) {
+                        if ( cs == astrunc::access::east_braces_r) {
                             ast_state_v = AST_BRACES_R;
+
+                        } else if ( cs == astrunc::access::east_braces_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACES_C;
                         }
                     } break;
-                case AST_SBRACKET_R :
-                case AST_BRACKET_R  :
-                case AST_BRACES_R   :
+                case AST_BRACES_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::east_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACES_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::east_braces_l) {
+                            ast_state_v = AST_BRACES_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACES_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::east_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::east_braces_l) {
+                                ast_state_v = AST_BRACES_L;
+
+                            } else {
+                                ast_state_v = AST_BRACES_C;
+                            }
+                        }
                     } break;
                 case AST_DOT :
                     {
@@ -1119,14 +1608,19 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
             AST_START   = 0,
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "\""  */
+            AST_DOUBLE_C  ,    /** char   */
             AST_DOUBLE_R  ,    /** "\""  */
             AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_C   ,    /** char   */
             AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
+            AST_SBRACKET_C,    /** char   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
+            AST_BRACKET_C ,    /** char   */
             AST_BRACKET_R ,    /** "]"   */
             AST_BRACES_L  ,    /** "{"   */
+            AST_BRACES_C  ,    /** char   */
             AST_BRACES_R  ,    /** "}"   */
             AST_SEMI      ,    /** ";"   */
             AST_DOT       ,    /** "."   */
@@ -1145,7 +1639,7 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
             if ( __cs == astrunc::access::india_double_l) {
                 rc_state = AST_DOUBLE_L;
 
-            } else if ( __cs == astrunc::access::east_angle_l ) {
+            } else if ( __cs == astrunc::access::india_angle_l ) {
                 rc_state = AST_ANGLE_L;
 
             } else if ( __cs == astrunc::access::india_sbracket_l ) {
@@ -1201,21 +1695,16 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
             cs.clear();
         }
 
+        int area_level = 0;
+
         astrunc::chars chars_context;
         while ( chars_context.next( __seg, cs)) {
             switch ( ast_state_v ) {
                 case AST_START : 
-                    {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, AST_START);
-                    } break;
                 case AST_CONTENT :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
-
                         ast_state_v = ast_next_state( cs, ast_state_v);
 
                         if ( AST_CONTENT == ast_state_v) {
@@ -1232,24 +1721,62 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::india_double_r ) {
+                        if ( cs == astrunc::access::india_double_r) {
                             ast_state_v = AST_DOUBLE_R;
+
+                        } else {
+                            ast_state_v = AST_DOUBLE_C;
+                        }
+                    } break;
+                case AST_DOUBLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_double_r) {
+                            ast_state_v = AST_CONTENT;
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_DOUBLE_R :
                     {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        /** Nothing */
                     } break;
                 case AST_ANGLE_L :
                     {
-                        /** Append */
+                        area_level += 1;
+
+                        /** Push back sentence content */
                         sentence_s += cs;
 
                         if ( cs == astrunc::access::india_angle_r) {
                             ast_state_v = AST_ANGLE_R;
+
+                        } else if ( cs == astrunc::access::india_angle_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_ANGLE_C;
+                        }
+                    } break;
+                case AST_ANGLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_ANGLE_R;
+                            } else {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::india_angle_l) {
+                            ast_state_v = AST_ANGLE_L;
+
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_ANGLE_R :
@@ -1257,43 +1784,204 @@ int astrunc::access::split_india( std::vector< std::string > &__vs, const std::s
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::india_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::india_angle_l) {
+                                ast_state_v = AST_ANGLE_L;
+
+                            } else {
+                                ast_state_v = AST_ANGLE_C;
+                            }
+                        }
                     } break;
                 case AST_SBRACKET_L :
+                    {
+                        area_level += 1;
+
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_sbracket_r) {
+                            ast_state_v = AST_SBRACKET_R;
+
+                        } else if ( cs == astrunc::access::india_sbracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_SBRACKET_C;
+                        }
+                    } break;
+                case AST_SBRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::india_sbracket_l) {
+                            ast_state_v = AST_SBRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_SBRACKET_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::india_sbracket_r ) {
-                            ast_state_v = AST_SBRACKET_R;
+                        if ( cs == astrunc::access::india_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::india_sbracket_l) {
+                                ast_state_v = AST_SBRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_SBRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACKET_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::india_bracket_r ) {
+                        if ( cs == astrunc::access::india_bracket_r) {
                             ast_state_v = AST_BRACKET_R;
+
+                        } else if ( cs == astrunc::access::india_bracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACKET_C;
+                        }
+                    } break;
+                case AST_BRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACKET_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::india_bracket_l) {
+                            ast_state_v = AST_BRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACKET_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::india_bracket_l) {
+                                ast_state_v = AST_BRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_BRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACES_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::india_braces_r ) {
+                        if ( cs == astrunc::access::india_braces_r) {
                             ast_state_v = AST_BRACES_R;
+
+                        } else if ( cs == astrunc::access::india_braces_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACES_C;
                         }
                     } break;
-                case AST_SBRACKET_R :
-                case AST_BRACKET_R  :
-                case AST_BRACES_R   :
+                case AST_BRACES_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::india_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACES_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::india_braces_l) {
+                            ast_state_v = AST_BRACES_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACES_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::india_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::india_braces_l) {
+                                ast_state_v = AST_BRACES_L;
+
+                            } else {
+                                ast_state_v = AST_BRACES_C;
+                            }
+                        }
                     } break;
                 case AST_DOT :
                     {
@@ -1442,14 +2130,19 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
             AST_START   = 0,
             AST_CONTENT   ,
             AST_DOUBLE_L  ,    /** "«"   */
+            AST_DOUBLE_C  ,    /** char   */
             AST_DOUBLE_R  ,    /** "»"   */
             AST_ANGLE_L   ,    /** "<"   */
+            AST_ANGLE_C   ,    /** char   */
             AST_ANGLE_R   ,    /** ">"   */
             AST_SBRACKET_L,    /** "("   */
+            AST_SBRACKET_C,    /** char   */
             AST_SBRACKET_R,    /** ")"   */
             AST_BRACKET_L ,    /** "["   */
+            AST_BRACKET_C ,    /** char   */
             AST_BRACKET_R ,    /** "]"   */
             AST_BRACES_L  ,    /** "{"   */
+            AST_BRACES_C  ,    /** char   */
             AST_BRACES_R  ,    /** "}"   */
             AST_DOT       ,    /** "."   */
             AST_QUESTION  ,    /** "՞"   */
@@ -1520,17 +2213,12 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
             cs.clear();
         }
 
+        int area_level = 0;
+
         astrunc::chars chars_context;
         while ( chars_context.next( __seg, cs)) {
             switch ( ast_state_v ) {
                 case AST_START : 
-                    {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, AST_START);
-
-                    } break;
                 case AST_CONTENT :
                     {
                         /** Push back sentence content */
@@ -1551,24 +2239,62 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::armenia_double_r ) {
+                        if ( cs == astrunc::access::armenia_double_r) {
                             ast_state_v = AST_DOUBLE_R;
+
+                        } else {
+                            ast_state_v = AST_DOUBLE_C;
+                        }
+                    } break;
+                case AST_DOUBLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_double_r) {
+                            ast_state_v = AST_CONTENT;
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_DOUBLE_R :
                     {
-                        /** Push back sentence content */
-                        sentence_s += cs;
-
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        /** Nothing */
                     } break;
                 case AST_ANGLE_L :
                     {
-                        /** Append */
+                        area_level += 1;
+
+                        /** Push back sentence content */
                         sentence_s += cs;
 
                         if ( cs == astrunc::access::armenia_angle_r) {
                             ast_state_v = AST_ANGLE_R;
+
+                        } else if ( cs == astrunc::access::armenia_angle_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_ANGLE_C;
+                        }
+                    } break;
+                case AST_ANGLE_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_ANGLE_R;
+                            } else {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::armenia_angle_l) {
+                            ast_state_v = AST_ANGLE_L;
+
+                        } else {
+                            /** Pass */
                         }
                     } break;
                 case AST_ANGLE_R :
@@ -1576,43 +2302,204 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::armenia_angle_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::armenia_angle_l) {
+                                ast_state_v = AST_ANGLE_L;
+
+                            } else {
+                                ast_state_v = AST_ANGLE_C;
+                            }
+                        }
                     } break;
                 case AST_SBRACKET_L :
+                    {
+                        area_level += 1;
+
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_sbracket_r) {
+                            ast_state_v = AST_SBRACKET_R;
+
+                        } else if ( cs == astrunc::access::armenia_sbracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_SBRACKET_C;
+                        }
+                    } break;
+                case AST_SBRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::armenia_sbracket_l) {
+                            ast_state_v = AST_SBRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_SBRACKET_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::armenia_sbracket_r ) {
-                            ast_state_v = AST_SBRACKET_R;
+                        if ( cs == astrunc::access::armenia_sbracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::armenia_sbracket_l) {
+                                ast_state_v = AST_SBRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_SBRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACKET_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::armenia_bracket_r ) {
+                        if ( cs == astrunc::access::armenia_bracket_r) {
                             ast_state_v = AST_BRACKET_R;
+
+                        } else if ( cs == astrunc::access::armenia_bracket_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACKET_C;
+                        }
+                    } break;
+                case AST_BRACKET_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACKET_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::armenia_bracket_l) {
+                            ast_state_v = AST_BRACKET_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACKET_R :
+                    {
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_bracket_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::armenia_bracket_l) {
+                                ast_state_v = AST_BRACKET_L;
+
+                            } else {
+                                ast_state_v = AST_BRACKET_C;
+                            }
                         }
                     } break;
                 case AST_BRACES_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        if ( cs == astrunc::access::armenia_braces_r ) {
+                        if ( cs == astrunc::access::armenia_braces_r) {
                             ast_state_v = AST_BRACES_R;
+
+                        } else if ( cs == astrunc::access::armenia_braces_l) {
+                            /** Pass */
+                        } else {
+                            ast_state_v = AST_BRACES_C;
                         }
                     } break;
-                case AST_SBRACKET_R :
-                case AST_BRACKET_R  :
-                case AST_BRACES_R   :
+                case AST_BRACES_C :
+                    {
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_BRACES_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+
+                        } else if ( cs == astrunc::access::armenia_braces_l) {
+                            ast_state_v = AST_BRACES_L;
+
+                        } else {
+                            /** Pass */
+                        }
+                    } break;
+                case AST_BRACES_R :
                     {
                         /** Push back sentence content */
                         sentence_s += cs;
 
-                        ast_state_v = ast_next_state( cs, ast_state_v);
+                        if ( cs == astrunc::access::armenia_braces_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::armenia_braces_l) {
+                                ast_state_v = AST_BRACES_L;
+
+                            } else {
+                                ast_state_v = AST_BRACES_C;
+                            }
+                        }
                     } break;
                 case AST_DOT :
                     {
@@ -1739,6 +2626,6 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
 }/// astrunc::access::split_armenia
 
 
-#endif /** ASTRUNC_H__ */
+#endif /** __ASTRUNC_H__ */
 
 
