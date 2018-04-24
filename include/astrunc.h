@@ -2236,12 +2236,16 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
                     } break;
                 case AST_DOUBLE_L :
                     {
+                        area_level += 1;
+
                         /** Push back sentence content */
                         sentence_s += cs;
 
                         if ( cs == astrunc::access::armenia_double_r) {
                             ast_state_v = AST_DOUBLE_R;
 
+                        } else if ( cs == astrunc::access::armenia_double_l) {
+                            /** Pass */
                         } else {
                             ast_state_v = AST_DOUBLE_C;
                         }
@@ -2251,14 +2255,44 @@ int astrunc::access::split_armenia( std::vector< std::string > &__vs, const std:
                         sentence_s += cs;
 
                         if ( cs == astrunc::access::armenia_double_r) {
-                            ast_state_v = AST_CONTENT;
+                            area_level -= 1;
+
+                            if ( 0 < area_level) {
+                                ast_state_v = AST_DOUBLE_R;
+
+                            } else {
+                                area_level  = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else if ( cs == astrunc::access::armenia_double_l) {
+                            ast_state_v = AST_DOUBLE_L;
+
                         } else {
                             /** Pass */
                         }
                     } break;
                 case AST_DOUBLE_R :
                     {
-                        /** Nothing */
+                        /** Push back sentence content */
+                        sentence_s += cs;
+
+                        if ( cs == astrunc::access::armenia_double_r) {
+                            area_level -= 1;
+
+                            if ( 0 >= area_level) {
+                                area_level = 0;
+
+                                ast_state_v = ast_next_state( cs, ast_state_v);
+                            }
+                        } else {
+                            if ( cs == astrunc::access::armenia_double_l) {
+                                ast_state_v = AST_DOUBLE_L;
+
+                            } else {
+                                ast_state_v = AST_DOUBLE_C;
+                            }
+                        }
                     } break;
                 case AST_ANGLE_L :
                     {
